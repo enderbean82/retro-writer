@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Retro Writer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            background-color: #000;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .screen {
+            background-color: #001100;
+            border: 2px solid #0f0;
+            padding: 20px;
+            position: relative;
+            min-height: 80vh;
+        }
+
+        .crt-effect {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            animation: scanline 6s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100%; }
+        }
+
+        textarea {
+            width: 100%;
+            height: 60vh;
+            background-color: #000;
+            color: #0f0;
+            border: none;
+            resize: none;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            padding: 10px;
+        }
+
+        .toolbar {
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background-color: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        button:active {
+            background-color: #0f0;
+            color: #000;
+        }
+
+        .status-bar {
+            color: #0f0;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .toolbar {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="screen">
+            <div class="toolbar">
+                <button onclick="saveFile()">Save</button>
+                <button onclick="saveAsFile()">Save As</button>
+                <button onclick="loadFile()">Load</button>
+            </div>
+            <textarea id="editor" placeholder="> READY" spellcheck="false"></textarea>
+            <div class="status-bar" id="status">READY</div>
+        </div>
+    </div>
+    <div class="crt-effect"></div>
+
+    <script>
+        let currentFileName = 'untitled.txt';
+        const editor = document.getElementById('editor');
+        const status = document.getElementById('status');
+
+        function setStatus(message, timeout = 2000) {
+            status.textContent = message;
+            if (timeout) setTimeout(() => status.textContent = 'READY', timeout);
+        }
+
+        function saveFile() {
+            try {
+                localStorage.setItem(currentFileName, editor.value);
+                setStatus(`SAVED ${currentFileName}`);
+            } catch (e) {
+                setStatus('SAVE ERROR');
+            }
+        }
+
+        function saveAsFile() {
+            const fileName = prompt('Enter file name:', currentFileName) || 'untitled.txt';
+            currentFileName = fileName.endsWith('.txt') ? fileName : fileName + '.txt';
+            saveFile();
+        }
+
+        function loadFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.txt';
+            
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = e => {
+                    editor.value = e.target.result;
+                    currentFileName = file.name;
+                    setStatus(`LOADED ${file.name}`);
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+
+        // Load last session
+        window.onload = () => {
+            const lastFile = localStorage.getItem(currentFileName);
+            if (lastFile) editor.value = lastFile;
+        };
+
+        // Auto-save every 30 seconds
+        setInterval(saveFile, 30000);
+    </script>
+</body>
+</html>
